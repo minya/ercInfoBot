@@ -11,7 +11,7 @@ import (
 
 var settings BotSettings
 
-const strNotifySleepDuration = "1m"
+const strNotifySleepDuration = "4h"
 
 func handle(upd telegram.Update) telegram.ReplyMessage {
 	log.Printf("Update: %v\n", upd)
@@ -91,7 +91,7 @@ func get(upd telegram.Update, userInfo UserInfo) telegram.ReplyMessage {
 	balanceInfo, _ := getBalanceInfo(userInfo.Login, userInfo.Password, userInfo.Account)
 	return telegram.ReplyMessage{
 		ChatId: upd.Message.Chat.Id,
-		Text:   fmt.Sprintf("%v", balanceInfo.AtTheEnd.Total),
+		Text:   formatBalance(balanceInfo),
 		ReplyMarkup: telegram.InlineKeyboardMarkup{
 			Keyboard: [][]telegram.KeyboardButton{
 				{
@@ -115,6 +115,21 @@ func getBalanceInfo(login string, password string, accNumber string) (erclib.Bal
 		return erclib.BalanceInfo{}, err
 	}
 	return bal, nil
+}
+
+func formatBalance(balance erclib.BalanceInfo) string {
+	return fmt.Sprintf(
+		"%v\nНачислено: %v\nПоступления: %v\nИтого: %v",
+		balance.Month,
+		formatBalanceRow(balance.Credit),
+		formatBalanceRow(balance.Debit),
+		formatBalanceRow(balance.AtTheEnd))
+}
+
+func formatBalanceRow(row erclib.Details) string {
+	return fmt.Sprintf(
+		"%v (УК: %v, Капремонт: %v)",
+		row.Total, row.CompanyPart, row.RepairPart)
 }
 
 func help(upd telegram.Update) telegram.ReplyMessage {
