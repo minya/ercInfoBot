@@ -6,28 +6,29 @@ import (
 	"github.com/minya/goutils/config"
 	"github.com/minya/telegram"
 	"log"
-	"regexp"
 	"time"
 )
 
 var settings BotSettings
 
+const strNotifySleepDuration = "1m"
+
 func handle(upd telegram.Update) telegram.ReplyMessage {
 	log.Printf("Update: %v\n", upd)
-	userName := upd.Message.Chat.Username
+	userId := upd.Message.From.Id
 
 	var userInfo UserInfo
-	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", userName)
+	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", userId)
 	userInfoErr := config.UnmarshalJson(&userInfo, userInfoPath)
 
 	if nil != userInfoErr {
-		log.Printf("Login not found for user %v. Creating stub.\n", userName)
+		log.Printf("Login not found for user %v. Creating stub.\n", userId)
 		config.MarshalJson(userInfo, userInfoPath)
 	} else {
-		log.Printf("Login for user %v found: %v\n", userName, userInfo.Login)
+		log.Printf("Login for user %v found: %v\n", userId, userInfo.Login)
 	}
 
-	cmd, cmdParseErr := parseCommand(upd)
+	cmd, cmdParseErr := ParseCommand(upd.Message.Text)
 
 	if cmdParseErr != nil {
 		log.Printf("Error parse command: %v\n", cmdParseErr)
@@ -54,7 +55,7 @@ func register(upd telegram.Update, login string, password string, account string
 	if errBalanceInfo != nil {
 		return telegram.ReplyMessage{
 			ChatId: upd.Message.Chat.Id,
-			Text:   "Wrong login/password. Please, register: /reg <login> <password>",
+			Text:   "Wrong login/password. Please, register: /reg <login> <password> <account>",
 		}
 	}
 
@@ -63,7 +64,7 @@ func register(upd telegram.Update, login string, password string, account string
 	userInfo.Password = password
 	userInfo.Account = account
 
-	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", upd.Message.Chat.Username)
+	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", upd.Message.From.Id)
 	config.MarshalJson(userInfo, userInfoPath)
 
 	return telegram.ReplyMessage{
@@ -83,7 +84,7 @@ func get(upd telegram.Update, userInfo UserInfo) telegram.ReplyMessage {
 	if userInfo.Login == "" {
 		return telegram.ReplyMessage{
 			ChatId: upd.Message.Chat.Id,
-			Text:   "Please, register: /reg <login> <password>",
+			Text:   "Please, register: /reg <login> <password> <account>",
 		}
 	}
 
@@ -127,35 +128,12 @@ func help(upd telegram.Update) telegram.ReplyMessage {
 	}
 }
 
-func parseCommand(upd telegram.Update) (Command, error) {
-	reCommand, _ := regexp.Compile("((/reg) (\\w+) (\\w+) (\\w+))|((/help))|((/get))|(/notify (on|off))")
-	match := reCommand.FindAllStringSubmatch(upd.Message.Text, -1)
-	log.Printf("TEXT: %v\n", upd.Message.Text)
-	log.Printf("MATCH: %v\n", match)
-	cmd := Command{}
-	if len(match) == 0 {
-		return cmd, fmt.Errorf("Unknown command: %v\n", upd.Message.Text)
-	}
+func updateLoop(sleepDuration time.Duration) {
+	for true {
+		log.Printf("Notify\n")
 
-	cmd.Command = match[0][0]
-	switch cmd.Command {
-	case "/reg":
-		cmd.Args = make([]string, 3, 3)
-		cmd.Args[0] = match[0][2]
-		cmd.Args[1] = match[0][3]
-		cmd.Args[2] = match[0][4]
-	case "/notify":
-		cmd.Args = make([]string, 1, 1)
-		cmd.Args[0] = match[0][2]
-	case "/help":
-		cmd.Args = make([]string, 0, 0)
-	case "/get":
-		cmd.Args = make([]string, 0, 0)
-	default:
-		return cmd, fmt.Errorf("Unknown command: %v", cmd.Command)
+		time.Sleep(sleepDuration)
 	}
-
-	return cmd, nil
 }
 
 func main() {
@@ -164,6 +142,11 @@ func main() {
 		log.Printf("Unable to get config: %v\n", errCfg)
 		return
 	}
+	duration, errParseDuration := time.ParseDuration(strNotifySleepDuration)
+	if errParseDuration != nil {
+		log.Fatalf("Unable to parse duration from '%v' \n", strNotifySleepDuration)
+	}
+	go updateLoop(duration)
 	listenErr := telegram.StartListen(settings.Id, 8080, handle)
 	if nil != listenErr {
 		log.Printf("Unable to start listen: %v\n", listenErr)
@@ -180,9 +163,4 @@ type UserInfo struct {
 
 type BotSettings struct {
 	Id string
-}
-
-type Command struct {
-	Command string
-	Args    []string
 }
