@@ -13,7 +13,7 @@ var settings BotSettings
 
 const strNotifySleepDuration = "4h"
 
-func handle(upd telegram.Update) telegram.ReplyMessage {
+func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
 	userId := upd.Message.From.Id
 
@@ -44,13 +44,15 @@ func handle(upd telegram.Update) telegram.ReplyMessage {
 		return setUpNotification(upd, userInfo, cmd.Args[0] == "on")
 	case "/get":
 		return get(upd, userInfo)
+	case "/receipt":
+		return receipt(upd, userInfo)
 	default:
 		log.Printf("Unknown command: %v\n", cmd.Command)
 		return help(upd)
 	}
 }
 
-func register(upd telegram.Update, login string, password string, account string) telegram.ReplyMessage {
+func register(upd telegram.Update, login string, password string, account string) interface{} {
 	balanceInfo, errBalanceInfo := getBalanceInfo(login, password, account)
 	if errBalanceInfo != nil {
 		return telegram.ReplyMessage{
@@ -80,7 +82,7 @@ func register(upd telegram.Update, login string, password string, account string
 	}
 }
 
-func get(upd telegram.Update, userInfo UserInfo) telegram.ReplyMessage {
+func get(upd telegram.Update, userInfo UserInfo) interface{} {
 	if userInfo.Login == "" {
 		return telegram.ReplyMessage{
 			ChatId: upd.Message.Chat.Id,
@@ -98,6 +100,18 @@ func get(upd telegram.Update, userInfo UserInfo) telegram.ReplyMessage {
 					telegram.KeyboardButton{Text: "/get"},
 				},
 			},
+		},
+	}
+}
+
+func receipt(upd telegram.Update, userInfo UserInfo) interface{} {
+	receipt, _ := erclib.GetReceipt(userInfo.Login, userInfo.Password, userInfo.Account)
+	return telegram.ReplyDocument{
+		ChatId:  upd.Message.Chat.Id,
+		Caption: "Квитанция",
+		InputFile: telegram.InputFile{
+			Content:  receipt,
+			FileName: "receipt.pdf",
 		},
 	}
 }

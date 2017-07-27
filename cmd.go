@@ -21,6 +21,8 @@ func ParseCommand(cmdStr string) (Command, error) {
 		cmd.Args[0] = match[1][0]
 		cmd.Args[1] = match[2][0]
 		cmd.Args[2] = match[3][0]
+	case "/receipt":
+		cmd.Args = make([]string, 0, 0)
 	case "/notify":
 		cmd.Args = make([]string, 1, 1)
 		cmd.Args[0] = match[0][0]
