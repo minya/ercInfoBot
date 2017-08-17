@@ -5,6 +5,7 @@ import (
 	"regexp"
 )
 
+// ParseCommand receives telegram cmd string and produces Command structure
 func ParseCommand(cmdStr string) (Command, error) {
 	reCommand, _ := regexp.Compile("(/?[\\w\\.;@,!@#$&^-_=*\\+]+)")
 	match := reCommand.FindAllStringSubmatch(cmdStr, -1)
@@ -37,6 +38,9 @@ func ParseCommand(cmdStr string) (Command, error) {
 	return cmd, nil
 }
 
+// Command structure:
+// Command - name of command (/reg, /help, etc)
+// Args - arguments
 type Command struct {
 	Command string
 	Args    []string
