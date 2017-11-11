@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"github.com/minya/erc/erclib"
+	"github.com/minya/ercInfoBot/model"
 	"github.com/minya/goutils/config"
 	"github.com/minya/telegram"
 	"log"
+	//"os"
 	"time"
 )
 
 var settings BotSettings
+var storage model.FirebaseStorage
 
 const strNotifySleepDuration = "4h"
 
@@ -17,7 +20,7 @@ func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
 	userId := upd.Message.From.Id
 
-	var userInfo UserInfo
+	var userInfo model.UserInfo
 	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", userId)
 	userInfoErr := config.UnmarshalJson(&userInfo, userInfoPath)
 
@@ -61,7 +64,7 @@ func register(upd telegram.Update, login string, password string, account string
 		}
 	}
 
-	var userInfo UserInfo
+	var userInfo model.UserInfo
 	userInfo.Login = login
 	userInfo.Password = password
 	userInfo.Account = account
@@ -82,7 +85,7 @@ func register(upd telegram.Update, login string, password string, account string
 	}
 }
 
-func get(upd telegram.Update, userInfo UserInfo) interface{} {
+func get(upd telegram.Update, userInfo model.UserInfo) interface{} {
 	if userInfo.Login == "" {
 		return telegram.ReplyMessage{
 			ChatId: upd.Message.Chat.Id,
@@ -104,7 +107,7 @@ func get(upd telegram.Update, userInfo UserInfo) interface{} {
 	}
 }
 
-func receipt(upd telegram.Update, userInfo UserInfo) interface{} {
+func receipt(upd telegram.Update, userInfo model.UserInfo) interface{} {
 	receipt, _ := erclib.GetReceipt(userInfo.Login, userInfo.Password, userInfo.Account)
 	return telegram.ReplyDocument{
 		ChatId:  upd.Message.Chat.Id,
@@ -116,7 +119,7 @@ func receipt(upd telegram.Update, userInfo UserInfo) interface{} {
 	}
 }
 
-func setUpNotification(upd telegram.Update, userInfo UserInfo, turnOn bool) telegram.ReplyMessage {
+func setUpNotification(upd telegram.Update, userInfo model.UserInfo, turnOn bool) telegram.ReplyMessage {
 	return telegram.ReplyMessage{
 		ChatId: upd.Message.Chat.Id,
 		Text:   "Not implemented yet",
@@ -149,6 +152,8 @@ func formatBalanceRow(row erclib.Details) string {
 func help(upd telegram.Update) telegram.ReplyMessage {
 	helpMsg :=
 		"/reg $login $password $account -- register your account\n" +
+			"/receipt -- get receipt (pdf)\n" +
+			"/get -- get balance\n" +
 			"/notify $on|$off -- set up notifications"
 
 	return telegram.ReplyMessage{
@@ -175,6 +180,12 @@ func main() {
 	if errParseDuration != nil {
 		log.Fatalf("Unable to parse duration from '%v' \n", strNotifySleepDuration)
 	}
+	fbSettings := settings.StorageSettings
+	if settings.Id == "" || fbSettings.ApiKey == "" || fbSettings.BaseUrl == "" || fbSettings.Login == "" || fbSettings.Password == "" {
+		log.Fatalf("Incorrect settings\n")
+	}
+	storage = model.NewFirebaseStorage(
+		fbSettings.BaseUrl, fbSettings.ApiKey, fbSettings.Login, fbSettings.Password)
 	go updateLoop(duration)
 	listenErr := telegram.StartListen(settings.Id, 8080, handle)
 	if nil != listenErr {
@@ -183,13 +194,14 @@ func main() {
 
 }
 
-type UserInfo struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	Account  string `json:"account"`
-	Notify   bool   `json:"notify"`
+type BotSettings struct {
+	Id              string
+	StorageSettings FirebaseSettings
 }
 
-type BotSettings struct {
-	Id string
+type FirebaseSettings struct {
+	BaseUrl  string `json:"baseUrl"`
+	ApiKey   string `json:"apiKey"`
+	Login    string `json:"login"`
+	Password string `json:"password"`
 }
