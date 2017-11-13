@@ -79,6 +79,9 @@ func register(upd telegram.Update, login string, password string, account string
 				{
 					telegram.KeyboardButton{Text: "/get"},
 				},
+				{
+					telegram.KeyboardButton{Text: "/receipt"},
+				},
 			},
 		},
 	}
@@ -102,6 +105,9 @@ func get(upd telegram.Update, userInfo model.UserInfo) interface{} {
 				{
 					telegram.KeyboardButton{Text: "/get"},
 				},
+				{
+					telegram.KeyboardButton{Text: "/receipt"},
+				},
 			},
 		},
 	}
@@ -115,6 +121,16 @@ func receipt(upd telegram.Update, userInfo model.UserInfo) interface{} {
 		InputFile: telegram.InputFile{
 			Content:  receipt,
 			FileName: "receipt.pdf",
+		},
+		ReplyMarkup: telegram.InlineKeyboardMarkup{
+			Keyboard: [][]telegram.KeyboardButton{
+				{
+					telegram.KeyboardButton{Text: "/get"},
+				},
+				{
+					telegram.KeyboardButton{Text: "/receipt"},
+				},
+			},
 		},
 	}
 }
