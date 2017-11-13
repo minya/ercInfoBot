@@ -21,8 +21,8 @@ func NewFirebaseStorage(baseUrl string, apiKey string, login string, password st
 	return storage
 }
 
-func GetUserInfo(this *FirebaseStorage, userId string) (UserInfo, error) {
-	ref, err := getReference(this, userId)
+func (this FirebaseStorage) GetUserInfo(userId string) (UserInfo, error) {
+	ref, err := this.getReference(userId)
 	var result UserInfo
 	if err = ref.Value(&result); err != nil {
 		return result, err
@@ -30,15 +30,15 @@ func GetUserInfo(this *FirebaseStorage, userId string) (UserInfo, error) {
 	return result, nil
 }
 
-func SetUserInfo(this *FirebaseStorage, userId string, userInfo UserInfo) error {
-	ref, err := getReference(this, userId)
+func (this FirebaseStorage) SetUserInfo(userId string, userInfo UserInfo) error {
+	ref, err := this.getReference(userId)
 	if err = ref.Write(userInfo); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getReference(this *FirebaseStorage, userId string) (*firebase.Reference, error) {
+func (this FirebaseStorage) getReference(userId string) (*firebase.Reference, error) {
 	//token := "AIzaSyCd2EINByhPwPz-gqpX3QGYx3Wr2FA4dgg"
 	response, err := googleapis.SignInWithEmailAndPassword(
 		this.Login, this.Password, this.ApiKey)

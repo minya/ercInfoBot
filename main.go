@@ -1,13 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/minya/erc/erclib"
 	"github.com/minya/ercInfoBot/model"
 	"github.com/minya/goutils/config"
 	"github.com/minya/telegram"
 	"log"
-	//"os"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -20,13 +22,11 @@ func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
 	userId := upd.Message.From.Id
 
-	var userInfo model.UserInfo
-	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", userId)
-	userInfoErr := config.UnmarshalJson(&userInfo, userInfoPath)
+	userInfo, userInfoErr := storage.GetUserInfo(strconv.Itoa(userId))
 
 	if nil != userInfoErr {
 		log.Printf("Login not found for user %v. Creating stub.\n", userId)
-		config.MarshalJson(userInfo, userInfoPath)
+		storage.SetUserInfo(strconv.Itoa(userId), userInfo)
 	} else {
 		log.Printf("Login for user %v found: %v\n", userId, userInfo.Login)
 	}
@@ -69,8 +69,7 @@ func register(upd telegram.Update, login string, password string, account string
 	userInfo.Password = password
 	userInfo.Account = account
 
-	userInfoPath := fmt.Sprintf(".ercInfoBot/users/%v.json", upd.Message.From.Id)
-	config.MarshalJson(userInfo, userInfoPath)
+	storage.SetUserInfo(strconv.Itoa(upd.Message.From.Id), userInfo)
 
 	return telegram.ReplyMessage{
 		ChatId: upd.Message.Chat.Id,
@@ -86,6 +85,7 @@ func register(upd telegram.Update, login string, password string, account string
 }
 
 func get(upd telegram.Update, userInfo model.UserInfo) interface{} {
+	log.Printf("USERINFO %v\n", userInfo)
 	if userInfo.Login == "" {
 		return telegram.ReplyMessage{
 			ChatId: upd.Message.Chat.Id,
@@ -192,6 +192,21 @@ func main() {
 		log.Printf("Unable to start listen: %v\n", listenErr)
 	}
 
+}
+
+func init() {
+	var logPath string
+	flag.StringVar(&logPath, "logpath", "ercInfoBot.log", "Path to write logs")
+	flag.Parse()
+	setUpLogger(logPath)
+}
+
+func setUpLogger(logPath string) {
+	logFile, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalf("error opening file: %v", err)
+	}
+	log.SetOutput(logFile)
 }
 
 type BotSettings struct {
