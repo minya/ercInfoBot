@@ -3,14 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/minya/erc/erclib"
-	"github.com/minya/ercInfoBot/model"
-	"github.com/minya/goutils/config"
-	"github.com/minya/telegram"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/minya/erc/erclib"
+	"github.com/minya/ercInfoBot/model"
+	"github.com/minya/goutils/config"
+	"github.com/minya/telegram"
 )
 
 var settings BotSettings
@@ -187,7 +188,7 @@ func updateLoop(sleepDuration time.Duration) {
 }
 
 func main() {
-	errCfg := config.UnmarshalJson(&settings, ".ercInfoBot/settings.json")
+	errCfg := config.UnmarshalJson(&settings, "~/.ercInfoBot/settings.json")
 	if nil != errCfg {
 		log.Printf("Unable to get config: %v\n", errCfg)
 		return
