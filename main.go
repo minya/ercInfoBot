@@ -199,7 +199,7 @@ func setUpLogger(logPath string) {
 	log.SetOutput(logFile)
 }
 
-func replyButtons() ReplyKeyboardMarkup {
+func replyButtons() telegram.ReplyKeyboardMarkup {
 	return telegram.ReplyKeyboardMarkup{
 		Keyboard: [][]telegram.KeyboardButton{
 			{
