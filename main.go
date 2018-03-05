@@ -170,10 +170,10 @@ func main() {
 	if errParseDuration != nil {
 		log.Fatalf("Unable to parse duration from '%v' \n", strNotifySleepDuration)
 	}
-	fbSettings := settings.StorageSettings
-	if settings.Id == "" || fbSettings.ApiKey == "" || fbSettings.BaseUrl == "" || fbSettings.Login == "" || fbSettings.Password == "" {
+	if !settingsAreValid(&settings) {
 		log.Fatalf("Incorrect settings\n")
 	}
+	fbSettings := settings.StorageSettings
 	storage = model.NewFirebaseStorage(
 		fbSettings.BaseUrl, fbSettings.ApiKey, fbSettings.Login, fbSettings.Password)
 	go updateLoop(duration)
@@ -209,6 +209,15 @@ func replyButtons() telegram.ReplyKeyboardMarkup {
 		},
 		ResizeKeyboard: true,
 	}
+}
+
+func settingsAreValid(settings *BotSettings) bool {
+	fbSettings := settings.StorageSettings
+	return settings.Id == "" ||
+		fbSettings.ApiKey == "" ||
+		fbSettings.BaseUrl == "" ||
+		fbSettings.Login == "" ||
+		fbSettings.Password == ""
 }
 
 type BotSettings struct {
