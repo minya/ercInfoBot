@@ -73,18 +73,9 @@ func register(upd telegram.Update, login string, password string, account string
 	storage.SetUserInfo(strconv.Itoa(upd.Message.From.Id), userInfo)
 
 	return telegram.ReplyMessage{
-		ChatId: upd.Message.Chat.Id,
-		Text:   fmt.Sprintf("You have been registered. Ur balance is: %v", balanceInfo.AtTheEnd.Total),
-		ReplyMarkup: telegram.InlineKeyboardMarkup{
-			Keyboard: [][]telegram.KeyboardButton{
-				{
-					telegram.KeyboardButton{Text: "/get"},
-				},
-				{
-					telegram.KeyboardButton{Text: "/receipt"},
-				},
-			},
-		},
+		ChatId:      upd.Message.Chat.Id,
+		Text:        fmt.Sprintf("You have been registered. Ur balance is: %v", balanceInfo.AtTheEnd.Total),
+		ReplyMarkup: replyButtons(),
 	}
 }
 
@@ -99,18 +90,9 @@ func get(upd telegram.Update, userInfo model.UserInfo) interface{} {
 
 	balanceInfo, _ := getBalanceInfo(userInfo.Login, userInfo.Password, userInfo.Account)
 	return telegram.ReplyMessage{
-		ChatId: upd.Message.Chat.Id,
-		Text:   formatBalance(balanceInfo),
-		ReplyMarkup: telegram.InlineKeyboardMarkup{
-			Keyboard: [][]telegram.KeyboardButton{
-				{
-					telegram.KeyboardButton{Text: "/get"},
-				},
-				{
-					telegram.KeyboardButton{Text: "/receipt"},
-				},
-			},
-		},
+		ChatId:      upd.Message.Chat.Id,
+		Text:        formatBalance(balanceInfo),
+		ReplyMarkup: replyButtons(),
 	}
 }
 
@@ -123,16 +105,7 @@ func receipt(upd telegram.Update, userInfo model.UserInfo) interface{} {
 			Content:  receipt,
 			FileName: "receipt.pdf",
 		},
-		ReplyMarkup: telegram.InlineKeyboardMarkup{
-			Keyboard: [][]telegram.KeyboardButton{
-				{
-					telegram.KeyboardButton{Text: "/get"},
-				},
-				{
-					telegram.KeyboardButton{Text: "/receipt"},
-				},
-			},
-		},
+		ReplyMarkup: replyButtons(),
 	}
 }
 
@@ -224,6 +197,20 @@ func setUpLogger(logPath string) {
 		log.Fatalf("error opening file: %v", err)
 	}
 	log.SetOutput(logFile)
+}
+
+func replyButtons() ReplyKeyboardMarkup {
+	return telegram.ReplyKeyboardMarkup{
+		Keyboard: [][]telegram.KeyboardButton{
+			{
+				telegram.KeyboardButton{Text: "/get"},
+			},
+			{
+				telegram.KeyboardButton{Text: "/receipt"},
+			},
+		},
+		ResizeKeyboard: true,
+	}
 }
 
 type BotSettings struct {
