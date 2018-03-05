@@ -203,10 +203,8 @@ func replyButtons() telegram.ReplyKeyboardMarkup {
 	return telegram.ReplyKeyboardMarkup{
 		Keyboard: [][]telegram.KeyboardButton{
 			{
-				telegram.KeyboardButton{Text: "/get"},
-			},
-			{
 				telegram.KeyboardButton{Text: "/receipt"},
+				telegram.KeyboardButton{Text: "/get"},
 			},
 		},
 		ResizeKeyboard: true,
