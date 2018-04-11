@@ -6,3 +6,8 @@ type UserInfo struct {
 	Account  string `json:"account"`
 	Notify   bool   `json:"notify"`
 }
+
+type SubscriptionInfo struct {
+	ChatId int    `json:"chatId"`
+	UserId string `json:"userId"`
+}

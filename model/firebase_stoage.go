@@ -22,7 +22,7 @@ func NewFirebaseStorage(baseUrl string, apiKey string, login string, password st
 }
 
 func (this FirebaseStorage) GetUserInfo(userId string) (UserInfo, error) {
-	ref, err := this.getReference(userId)
+	ref, err := this.getUserReference(userId)
 	var result UserInfo
 	if err = ref.Value(&result); err != nil {
 		return result, err
@@ -31,22 +31,35 @@ func (this FirebaseStorage) GetUserInfo(userId string) (UserInfo, error) {
 }
 
 func (this FirebaseStorage) SetUserInfo(userId string, userInfo UserInfo) error {
-	ref, err := this.getReference(userId)
+	ref, err := this.getUserReference(userId)
 	if err = ref.Write(userInfo); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this FirebaseStorage) getReference(userId string) (*firebase.Reference, error) {
-	//token := "AIzaSyCd2EINByhPwPz-gqpX3QGYx3Wr2FA4dgg"
-	response, err := googleapis.SignInWithEmailAndPassword(
-		this.Login, this.Password, this.ApiKey)
-	if err != nil {
+func (this FirebaseStorage) GetSubs() (*firebase.Reference, error) {
+	return this.getReference("/subscriptions")
+}
+func (this FirebaseStorage) getUserReference(userId string) (*firebase.Reference, error) {
+	return this.getReference("/accounts/" + userId)
+}
+
+func (this FirebaseStorage) getReference(path string) (*firebase.Reference, error) {
+	idToken, err := this.signIn()
+	if nil != err {
 		return nil, err
 	}
-
 	base := this.BaseUrl
-	ref := firebase.NewReference(base + "/accounts/" + userId).Auth(response.IdToken)
+	ref := firebase.NewReference(base + path).Auth(idToken)
 	return ref, nil
+}
+
+func (this FirebaseStorage) signIn() (string, error) {
+	response, err := googleapis.SignInWithEmailAndPassword(
+		this.Login, this.Password, this.ApiKey)
+	if nil != err {
+		return "", err
+	}
+	return response.IdToken, nil
 }

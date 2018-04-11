@@ -17,7 +17,7 @@ import (
 var settings BotSettings
 var storage model.FirebaseStorage
 
-const strNotifySleepDuration = "4h"
+const strNotifySleepDuration = "10s"
 
 func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
@@ -73,8 +73,9 @@ func register(upd telegram.Update, login string, password string, account string
 	storage.SetUserInfo(strconv.Itoa(upd.Message.From.Id), userInfo)
 
 	return telegram.ReplyMessage{
-		ChatId:      upd.Message.Chat.Id,
-		Text:        fmt.Sprintf("You have been registered. Ur balance is: %v", balanceInfo.AtTheEnd.Total),
+		ChatId: upd.Message.Chat.Id,
+		Text: fmt.Sprintf("You have been registered. "+
+			"Your balance is: %v", balanceInfo.AtTheEnd.Total),
 		ReplyMarkup: replyButtons(),
 	}
 }
@@ -154,8 +155,37 @@ func help(upd telegram.Update) telegram.ReplyMessage {
 
 func updateLoop(sleepDuration time.Duration) {
 	for true {
-		log.Printf("Notify\n")
+		log.Printf("Update...\n")
+		subsRef, err := storage.GetSubs()
+		if err != nil {
+			log.Printf("Error: %v\n", err)
+		} else {
+			var subsMap map[string]model.SubscriptionInfo
+			subsRef.Value(&subsMap)
+			for _, subscription := range subsMap {
+				userInfo, err := storage.GetUserInfo(subscription.UserId)
+				if err != nil {
+					log.Printf("[Update] Error: can't get user %v\n", subscription.UserId)
+					continue
+				}
+				balanceInfo, err := getBalanceInfo(
+					userInfo.Login, userInfo.Password, userInfo.Account)
+				if err != nil {
+					log.Printf("[Update] Error: can't get balance for user %v\n", subscription.UserId)
+					continue
+				}
+				msg := telegram.ReplyMessage{
+					ChatId:      subscription.ChatId,
+					Text:        fmt.Sprintf("%v", balanceInfo),
+					ReplyMarkup: replyButtons(),
+				}
+				err = telegram.SendMessage(settings.Id, msg)
 
+				if err != nil {
+					fmt.Printf("%v\n", err)
+				}
+			}
+		}
 		time.Sleep(sleepDuration)
 	}
 }
@@ -171,17 +201,20 @@ func main() {
 		log.Fatalf("Unable to parse duration from '%v' \n", strNotifySleepDuration)
 	}
 	if !settingsAreValid(&settings) {
-		log.Fatalf("Incorrect settings\n")
+		log.Fatalf("Incorrect settings: %v\n", settings)
 	}
 	fbSettings := settings.StorageSettings
 	storage = model.NewFirebaseStorage(
-		fbSettings.BaseUrl, fbSettings.ApiKey, fbSettings.Login, fbSettings.Password)
+		fbSettings.BaseUrl,
+		fbSettings.ApiKey,
+		fbSettings.Login,
+		fbSettings.Password)
+
 	go updateLoop(duration)
 	listenErr := telegram.StartListen(settings.Id, 8080, handle)
 	if nil != listenErr {
 		log.Printf("Unable to start listen: %v\n", listenErr)
 	}
-
 }
 
 func init() {
@@ -213,11 +246,11 @@ func replyButtons() telegram.ReplyKeyboardMarkup {
 
 func settingsAreValid(settings *BotSettings) bool {
 	fbSettings := settings.StorageSettings
-	return settings.Id == "" ||
-		fbSettings.ApiKey == "" ||
-		fbSettings.BaseUrl == "" ||
-		fbSettings.Login == "" ||
-		fbSettings.Password == ""
+	return settings.Id != "" &&
+		fbSettings.ApiKey != "" &&
+		fbSettings.BaseUrl != "" &&
+		fbSettings.Login != "" &&
+		fbSettings.Password != ""
 }
 
 type BotSettings struct {
