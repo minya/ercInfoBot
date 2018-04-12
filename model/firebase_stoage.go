@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/melvinmt/firebase"
 	"github.com/minya/googleapis"
+	"strconv"
 )
 
 type FirebaseStorage struct {
@@ -21,8 +22,8 @@ func NewFirebaseStorage(baseUrl string, apiKey string, login string, password st
 	return storage
 }
 
-func (this FirebaseStorage) GetUserInfo(userId string) (UserInfo, error) {
-	ref, err := this.getUserReference(userId)
+func (this FirebaseStorage) GetUserInfo(userId int) (UserInfo, error) {
+	ref, err := this.getUserReference(strconv.Itoa(userId))
 	var result UserInfo
 	if err = ref.Value(&result); err != nil {
 		return result, err
@@ -38,9 +39,25 @@ func (this FirebaseStorage) SetUserInfo(userId string, userInfo UserInfo) error 
 	return nil
 }
 
-func (this FirebaseStorage) GetSubs() (*firebase.Reference, error) {
-	return this.getReference("/subscriptions")
+func (this FirebaseStorage) GetSubscriptions() (map[string]SubscriptionInfo, error) {
+	ref, err := this.getReference("/subscriptions")
+	if err != nil {
+		return nil, err
+	}
+
+	var subsMap map[string]SubscriptionInfo
+	ref.Value(&subsMap)
+	return subsMap, nil
 }
+
+func (this FirebaseStorage) SaveSubscription(id string, s SubscriptionInfo) error {
+	ref, err := this.getReference("/subscriptions/" + id)
+	if nil != err {
+		return err
+	}
+	return ref.Write(s)
+}
+
 func (this FirebaseStorage) getUserReference(userId string) (*firebase.Reference, error) {
 	return this.getReference("/accounts/" + userId)
 }

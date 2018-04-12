@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/minya/erc/erclib"
 	"github.com/minya/ercInfoBot/model"
 	"github.com/minya/goutils/config"
@@ -23,7 +24,7 @@ func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
 	userId := upd.Message.From.Id
 
-	userInfo, userInfoErr := storage.GetUserInfo(strconv.Itoa(userId))
+	userInfo, userInfoErr := storage.GetUserInfo(userId)
 
 	if nil != userInfoErr {
 		log.Printf("Login not found for user %v. Creating stub.\n", userId)
@@ -111,9 +112,25 @@ func receipt(upd telegram.Update, userInfo model.UserInfo) interface{} {
 }
 
 func setUpNotification(upd telegram.Update, userInfo model.UserInfo, turnOn bool) telegram.ReplyMessage {
+	balanceInfo, err := getBalanceInfo(
+		userInfo.Login, userInfo.Password, userInfo.Account)
+	var lastSeenState string
+	if err == nil {
+		lastSeenState = formatBalance(balanceInfo)
+	}
+	subscription := model.SubscriptionInfo{
+		ChatId:        upd.Message.Chat.Id,
+		UserId:        upd.Message.From.Id,
+		LastSeenState: lastSeenState,
+	}
+
+	id := uuid.New().String()
+	storage.SaveSubscription(id, subscription)
+
 	return telegram.ReplyMessage{
-		ChatId: upd.Message.Chat.Id,
-		Text:   "Not implemented yet",
+		ChatId:      upd.Message.Chat.Id,
+		Text:        "Вы подписаны на уведомления",
+		ReplyMarkup: replyButtons(),
 	}
 }
 
@@ -156,13 +173,11 @@ func help(upd telegram.Update) telegram.ReplyMessage {
 func updateLoop(sleepDuration time.Duration) {
 	for true {
 		log.Printf("Update...\n")
-		subsRef, err := storage.GetSubs()
+		subsMap, err := storage.GetSubscriptions()
 		if err != nil {
 			log.Printf("Error: %v\n", err)
 		} else {
-			var subsMap map[string]model.SubscriptionInfo
-			subsRef.Value(&subsMap)
-			for _, subscription := range subsMap {
+			for id, subscription := range subsMap {
 				userInfo, err := storage.GetUserInfo(subscription.UserId)
 				if err != nil {
 					log.Printf("[Update] Error: can't get user %v\n", subscription.UserId)
@@ -174,15 +189,25 @@ func updateLoop(sleepDuration time.Duration) {
 					log.Printf("[Update] Error: can't get balance for user %v\n", subscription.UserId)
 					continue
 				}
-				msg := telegram.ReplyMessage{
-					ChatId:      subscription.ChatId,
-					Text:        fmt.Sprintf("%v", balanceInfo),
-					ReplyMarkup: replyButtons(),
-				}
-				err = telegram.SendMessage(settings.Id, msg)
+				newState := fmt.Sprintf("%v", balanceInfo)
 
-				if err != nil {
-					fmt.Printf("%v\n", err)
+				if subscription.LastSeenState == "" {
+					subscription.LastSeenState = newState
+					storage.SaveSubscription(id, subscription)
+				} else if subscription.LastSeenState != newState {
+					subscription.LastSeenState = newState
+					storage.SaveSubscription(id, subscription)
+
+					messageText := "Баланс обновился:\n" + formatBalance(balanceInfo)
+					msg := telegram.ReplyMessage{
+						ChatId:      subscription.ChatId,
+						Text:        messageText,
+						ReplyMarkup: replyButtons(),
+					}
+					err = telegram.SendMessage(settings.Id, msg)
+					if err != nil {
+						fmt.Printf("%v\n", err)
+					}
 				}
 			}
 		}
