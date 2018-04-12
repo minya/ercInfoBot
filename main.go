@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/minya/erc/erclib"
 	"github.com/minya/ercInfoBot/model"
 	"github.com/minya/goutils/config"
@@ -18,8 +16,6 @@ import (
 var settings BotSettings
 var storage model.FirebaseStorage
 
-const strNotifySleepDuration = "10s"
-
 func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
 	userId := upd.Message.From.Id
@@ -28,7 +24,7 @@ func handle(upd telegram.Update) interface{} {
 
 	if nil != userInfoErr {
 		log.Printf("Login not found for user %v. Creating stub.\n", userId)
-		storage.SetUserInfo(strconv.Itoa(userId), userInfo)
+		storage.SaveUser(userId, userInfo)
 	} else {
 		log.Printf("Login for user %v found: %v\n", userId, userInfo.Login)
 	}
@@ -71,7 +67,7 @@ func register(upd telegram.Update, login string, password string, account string
 	userInfo.Password = password
 	userInfo.Account = account
 
-	storage.SetUserInfo(strconv.Itoa(upd.Message.From.Id), userInfo)
+	storage.SaveUser(upd.Message.From.Id, userInfo)
 
 	return telegram.ReplyMessage{
 		ChatId: upd.Message.Chat.Id,
@@ -118,14 +114,22 @@ func setUpNotification(upd telegram.Update, userInfo model.UserInfo, turnOn bool
 	if err == nil {
 		lastSeenState = formatBalance(balanceInfo)
 	}
-	subscription := model.SubscriptionInfo{
+	userId := upd.Message.From.Id
+	user, err := storage.GetUserInfo(userId)
+	if err != nil {
+		return telegram.ReplyMessage{
+			ChatId:      upd.Message.Chat.Id,
+			Text:        "Ошибка",
+			ReplyMarkup: replyButtons(),
+		}
+	}
+
+	user.Subscription = model.SubscriptionInfo{
 		ChatId:        upd.Message.Chat.Id,
-		UserId:        upd.Message.From.Id,
 		LastSeenState: lastSeenState,
 	}
 
-	id := uuid.New().String()
-	storage.SaveSubscription(id, subscription)
+	storage.SaveUser(userId, user)
 
 	return telegram.ReplyMessage{
 		ChatId:      upd.Message.Chat.Id,
@@ -173,34 +177,37 @@ func help(upd telegram.Update) telegram.ReplyMessage {
 func updateLoop(sleepDuration time.Duration) {
 	for true {
 		log.Printf("Update...\n")
-		subsMap, err := storage.GetSubscriptions()
+		subsMap, err := storage.GetUsers()
 		if err != nil {
 			log.Printf("Error: %v\n", err)
 		} else {
-			for id, subscription := range subsMap {
-				userInfo, err := storage.GetUserInfo(subscription.UserId)
-				if err != nil {
-					log.Printf("[Update] Error: can't get user %v\n", subscription.UserId)
+			for id, userInfo := range subsMap {
+				log.Printf("[Update] Check user %v\n", id)
+				if userInfo.Subscription.ChatId == 0 {
+					log.Printf("[Update] User %v is not subscribed. Skip.\n", id)
 					continue
 				}
 				balanceInfo, err := getBalanceInfo(
 					userInfo.Login, userInfo.Password, userInfo.Account)
 				if err != nil {
-					log.Printf("[Update] Error: can't get balance for user %v\n", subscription.UserId)
+					log.Printf("[Update] Error: can't get balance for user %v\n", id)
 					continue
 				}
 				newState := fmt.Sprintf("%v", balanceInfo)
 
-				if subscription.LastSeenState == "" {
-					subscription.LastSeenState = newState
-					storage.SaveSubscription(id, subscription)
-				} else if subscription.LastSeenState != newState {
-					subscription.LastSeenState = newState
-					storage.SaveSubscription(id, subscription)
+				sub := &userInfo.Subscription
+				if sub.LastSeenState == "" {
+					sub.LastSeenState = newState
+					storage.SaveUser(id, userInfo)
+					log.Printf("[Update] Initial balance correction for user %v\n", id)
+				} else if sub.LastSeenState != newState {
+					log.Printf("[Update] Balance changed for user %v\n", id)
+					sub.LastSeenState = newState
+					storage.SaveUser(id, userInfo)
 
 					messageText := "Баланс обновился:\n" + formatBalance(balanceInfo)
 					msg := telegram.ReplyMessage{
-						ChatId:      subscription.ChatId,
+						ChatId:      userInfo.Subscription.ChatId,
 						Text:        messageText,
 						ReplyMarkup: replyButtons(),
 					}
@@ -208,6 +215,8 @@ func updateLoop(sleepDuration time.Duration) {
 					if err != nil {
 						fmt.Printf("%v\n", err)
 					}
+				} else {
+					log.Printf("[Update] Balance hasn't been changed\n")
 				}
 			}
 		}
@@ -221,11 +230,12 @@ func main() {
 		log.Printf("Unable to get config: %v\n", errCfg)
 		return
 	}
-	duration, errParseDuration := time.ParseDuration(strNotifySleepDuration)
+
+	duration, errParseDuration := time.ParseDuration(settings.UpdateCheckPeriod)
 	if errParseDuration != nil {
-		log.Fatalf("Unable to parse duration from '%v' \n", strNotifySleepDuration)
+		log.Fatalf("Unable to parse duration from '%v' \n", settings.UpdateCheckPeriod)
 	}
-	if !settingsAreValid(&settings) {
+	if !settings.AreValid() {
 		log.Fatalf("Incorrect settings: %v\n", settings)
 	}
 	fbSettings := settings.StorageSettings
@@ -269,18 +279,20 @@ func replyButtons() telegram.ReplyKeyboardMarkup {
 	}
 }
 
-func settingsAreValid(settings *BotSettings) bool {
-	fbSettings := settings.StorageSettings
+type BotSettings struct {
+	Id                string
+	UpdateCheckPeriod string
+	StorageSettings   FirebaseSettings
+}
+
+func (this BotSettings) AreValid() bool {
+	fbSettings := &this.StorageSettings
 	return settings.Id != "" &&
 		fbSettings.ApiKey != "" &&
 		fbSettings.BaseUrl != "" &&
 		fbSettings.Login != "" &&
-		fbSettings.Password != ""
-}
-
-type BotSettings struct {
-	Id              string
-	StorageSettings FirebaseSettings
+		fbSettings.Password != "" &&
+		this.UpdateCheckPeriod != ""
 }
 
 type FirebaseSettings struct {
