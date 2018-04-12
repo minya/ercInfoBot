@@ -31,31 +31,23 @@ func (this FirebaseStorage) GetUserInfo(userId int) (UserInfo, error) {
 	return result, nil
 }
 
-func (this FirebaseStorage) SetUserInfo(userId string, userInfo UserInfo) error {
-	ref, err := this.getUserReference(userId)
+func (this FirebaseStorage) SaveUser(userId int, userInfo UserInfo) error {
+	ref, err := this.getUserReference(strconv.Itoa(userId))
 	if err = ref.Write(userInfo); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (this FirebaseStorage) GetSubscriptions() (map[string]SubscriptionInfo, error) {
-	ref, err := this.getReference("/subscriptions")
+func (this FirebaseStorage) GetUsers() (map[int]UserInfo, error) {
+	ref, err := this.getReference("/accounts")
 	if err != nil {
 		return nil, err
 	}
 
-	var subsMap map[string]SubscriptionInfo
+	var subsMap map[int]UserInfo
 	ref.Value(&subsMap)
 	return subsMap, nil
-}
-
-func (this FirebaseStorage) SaveSubscription(id string, s SubscriptionInfo) error {
-	ref, err := this.getReference("/subscriptions/" + id)
-	if nil != err {
-		return err
-	}
-	return ref.Write(s)
 }
 
 func (this FirebaseStorage) getUserReference(userId string) (*firebase.Reference, error) {
