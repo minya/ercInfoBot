@@ -18,15 +18,15 @@ var storage model.FirebaseStorage
 
 func handle(upd telegram.Update) interface{} {
 	log.Printf("Update: %v\n", upd)
-	userId := upd.Message.From.Id
+	userID := upd.Message.From.Id
 
-	userInfo, userInfoErr := storage.GetUserInfo(userId)
+	userInfo, userInfoErr := storage.GetUserInfo(userID)
 
 	if nil != userInfoErr {
-		log.Printf("Login not found for user %v. Creating stub.\n", userId)
-		storage.SaveUser(userId, userInfo)
+		log.Printf("Login not found for user %v. Creating stub.\n", userID)
+		storage.SaveUser(userID, userInfo)
 	} else {
-		log.Printf("Login for user %v found: %v\n", userId, userInfo.Login)
+		log.Printf("Login for user %v found: %v\n", userID, userInfo.Login)
 	}
 
 	cmd, cmdParseErr := ParseCommand(upd.Message.Text)
@@ -114,8 +114,8 @@ func setUpNotification(upd telegram.Update, userInfo model.UserInfo, turnOn bool
 	if err == nil {
 		lastSeenState = fmt.Sprintf("%v", balanceInfo)
 	}
-	userId := upd.Message.From.Id
-	user, err := storage.GetUserInfo(userId)
+	userID := upd.Message.From.Id
+	user, err := storage.GetUserInfo(userID)
 	if err != nil {
 		return telegram.ReplyMessage{
 			ChatId:      upd.Message.Chat.Id,
@@ -129,7 +129,7 @@ func setUpNotification(upd telegram.Update, userInfo model.UserInfo, turnOn bool
 		LastSeenState: lastSeenState,
 	}
 
-	storage.SaveUser(userId, user)
+	storage.SaveUser(userID, user)
 
 	return telegram.ReplyMessage{
 		ChatId:      upd.Message.Chat.Id,
@@ -211,7 +211,7 @@ func updateLoop(sleepDuration time.Duration) {
 						Text:        messageText,
 						ReplyMarkup: replyButtons(),
 					}
-					err = telegram.SendMessage(settings.Id, msg)
+					err = telegram.SendMessage(settings.ID, msg)
 					if err != nil {
 						fmt.Printf("%v\n", err)
 					}
@@ -235,18 +235,18 @@ func main() {
 	if errParseDuration != nil {
 		log.Fatalf("Unable to parse duration from '%v' \n", settings.UpdateCheckPeriod)
 	}
-	if !settings.AreValid() {
+	if !settings.areValid() {
 		log.Fatalf("Incorrect settings: %v\n", settings)
 	}
 	fbSettings := settings.StorageSettings
 	storage = model.NewFirebaseStorage(
-		fbSettings.BaseUrl,
-		fbSettings.ApiKey,
+		fbSettings.BaseURL,
+		fbSettings.APIKey,
 		fbSettings.Login,
 		fbSettings.Password)
 
 	go updateLoop(duration)
-	listenErr := telegram.StartListen(settings.Id, 8080, handle)
+	listenErr := telegram.StartListen(settings.ID, 8080, handle)
 	if nil != listenErr {
 		log.Printf("Unable to start listen: %v\n", listenErr)
 	}
@@ -279,25 +279,27 @@ func replyButtons() telegram.ReplyKeyboardMarkup {
 	}
 }
 
+// BotSettings struct to represent stored settings
 type BotSettings struct {
-	Id                string
-	UpdateCheckPeriod string
-	StorageSettings   FirebaseSettings
+	ID                string           `json:"id"`
+	UpdateCheckPeriod string           `json:"updateCheckPeriod"`
+	StorageSettings   FirebaseSettings `json:"storageSettings"`
 }
 
-func (this BotSettings) AreValid() bool {
-	fbSettings := &this.StorageSettings
-	return settings.Id != "" &&
-		fbSettings.ApiKey != "" &&
-		fbSettings.BaseUrl != "" &&
+func (theSettings BotSettings) areValid() bool {
+	fbSettings := &theSettings.StorageSettings
+	return settings.ID != "" &&
+		fbSettings.APIKey != "" &&
+		fbSettings.BaseURL != "" &&
 		fbSettings.Login != "" &&
 		fbSettings.Password != "" &&
-		this.UpdateCheckPeriod != ""
+		theSettings.UpdateCheckPeriod != ""
 }
 
+// FirebaseSettings struct is to store/retrieve settings
 type FirebaseSettings struct {
-	BaseUrl  string `json:"baseUrl"`
-	ApiKey   string `json:"apiKey"`
+	BaseURL  string `json:"baseUrl"`
+	APIKey   string `json:"apiKey"`
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
