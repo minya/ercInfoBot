@@ -12,7 +12,7 @@ func ParseCommand(cmdStr string) (Command, error) {
 
 	cmd := Command{}
 	if len(match) == 0 {
-		return cmd, fmt.Errorf("Unknown command: %v\n", cmdStr)
+		return cmd, fmt.Errorf("Unknown command: %v", cmdStr)
 	}
 
 	cmd.Command = match[0][0]
