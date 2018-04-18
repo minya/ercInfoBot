@@ -1,4 +1,3 @@
 # Erc balance monitoring bot
 ## TODO
-- Log file param
-- Notification routine
+- Buttons to subscribe and unsubscribe notifications
