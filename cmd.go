@@ -18,18 +18,25 @@ func ParseCommand(cmdStr string) (Command, error) {
 	cmd.Command = match[0][0]
 	switch cmd.Command {
 	case "/reg":
-		cmd.Args = make([]string, 3, 3)
+		cmd.Args = make([]string, 2, 2)
 		cmd.Args[0] = match[1][0]
 		cmd.Args[1] = match[2][0]
-		cmd.Args[2] = match[3][0]
 	case "/receipt":
-		cmd.Args = make([]string, 0, 0)
+		cmd.Args = make([]string, 0, 1)
+		if len(match) > 1 {
+			cmd.Args = append(cmd.Args, match[1][0])
+		}
 	case "/notify":
-		cmd.Args = make([]string, 1, 1)
-		cmd.Args[0] = match[0][0]
-	case "/help":
-		cmd.Args = make([]string, 0, 0)
+		cmd.Args = make([]string, 0, 1)
+		if len(match) > 1 {
+			cmd.Args = append(cmd.Args, match[1][0])
+		}
 	case "/get":
+		cmd.Args = make([]string, 0, 1)
+		if len(match) > 1 {
+			cmd.Args = append(cmd.Args, match[1][0])
+		}
+	case "/help":
 		cmd.Args = make([]string, 0, 0)
 	default:
 		return cmd, fmt.Errorf("Unknown command: %v", cmd.Command)
