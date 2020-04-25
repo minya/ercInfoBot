@@ -258,18 +258,18 @@ func getUserID(upd telegram.Update) int {
 
 func formatBalance(account erclib.Account, balance erclib.BalanceInfo) string {
 	return fmt.Sprintf(
-		"%v:\n%v\nНачислено: %v\nПоступления: %v\nИтого: %v",
+		"%v:\n%v\n%v",
 		account.Address,
 		balance.Month,
-		formatBalanceRow(balance.Credit),
-		formatBalanceRow(balance.Debit),
-		formatBalanceRow(balance.AtTheEnd))
+		formatRequisites(balance.Rows))
 }
 
-func formatBalanceRow(row erclib.Details) string {
-	return fmt.Sprintf(
-		"%v (УК: %v, Капремонт: %v)",
-		row.Total, row.CompanyPart, row.RepairPart)
+func formatRequisites(rows []erclib.BalanceRow) string {
+	var sb strings.Builder
+	for _, row := range rows {
+		sb.WriteString(fmt.Sprintf("%v: %v\n", row.Requisite, row.Amount))
+	}
+	return sb.String()
 }
 
 func listAccounts(accounts *[]erclib.Account) string {
