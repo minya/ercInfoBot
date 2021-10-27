@@ -15,7 +15,8 @@ import (
 func main() {
 	settings, storage, updateCheckPeriod := initialize()
 	ntf := notifier{botToken: settings.ID, storage: storage, sleepDuration: updateCheckPeriod}
-	ntf.Start()
+	botApi := telegram.NewApi(settings.ID)
+	ntf.Start(&botApi)
 	var makeERCClient = func(l string, p string) ercclient {
 		return erclib.NewErcClientWithCredentials(l, p)
 	}

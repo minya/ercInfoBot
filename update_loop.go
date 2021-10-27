@@ -16,11 +16,11 @@ type notifier struct {
 	botToken      string
 }
 
-func (n notifier) Start() {
-	go n.updateLoop()
+func (n notifier) Start(api *telegram.Api) {
+	go n.updateLoop(api)
 }
 
-func (n notifier) updateLoop() {
+func (n notifier) updateLoop(api *telegram.Api) {
 	for true {
 		log.Printf("Update...\n")
 		subsMap, err := n.storage.GetUsers()
@@ -41,7 +41,7 @@ func (n notifier) updateLoop() {
 						log.Printf("WARN  No account %v among accounts", accountNum)
 						continue
 					}
-					n.compareAndNotify(id, account, sub, userInfo, ercClient)
+					n.compareAndNotify(api, id, account, sub, userInfo, ercClient)
 				}
 			}
 		}
@@ -50,7 +50,7 @@ func (n notifier) updateLoop() {
 }
 
 func (n notifier) compareAndNotify(
-	userID int, account erclib.Account, sub model.SubscriptionInfo, userInfo model.UserInfo, ercClient erclib.ErcClient) {
+	api *telegram.Api, userID int, account erclib.Account, sub model.SubscriptionInfo, userInfo model.UserInfo, ercClient erclib.ErcClient) {
 
 	if sub.ChatID == 0 {
 		log.Printf("[Update] User %v is not subscribed. Skip.\n", userID)
@@ -80,7 +80,7 @@ func (n notifier) compareAndNotify(
 			Text:        messageText,
 			ReplyMarkup: replyButtons(),
 		}
-		err = telegram.SendMessage(n.botToken, msg)
+		err = api.SendMessage(msg)
 		if err != nil {
 			fmt.Printf("%v\n", err)
 		}
