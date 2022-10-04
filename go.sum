@@ -1,0 +1,12 @@
+github.com/melvinmt/firebase v0.0.0-20141108101506-fbeb099b58c6 h1:ZIVAEf5UP2lXSd6Q12Pk2i8xSHCMHZ0zs13QXkAjslc=
+github.com/melvinmt/firebase v0.0.0-20141108101506-fbeb099b58c6/go.mod h1:bibBqh6gjwsXKSlhdWrSDcFD43xvaXuuiWaDacTjUkU=
+github.com/minya/erc v0.0.0-20210211095514-286a1354e623 h1:nXwZfhwAJMXrxBF4DBLAbXLETfvbUAii9nSwyjDXxfw=
+github.com/minya/erc v0.0.0-20210211095514-286a1354e623/go.mod h1:P75Q4RQttjxiaII0Zcfoe1CNdjntXWRqq73j8ZzTg10=
+github.com/minya/googleapis v0.0.0-20171111171945-a898d12af8b1 h1:LivMwN6paq1/bjSlViv++erK61VD371GMBU8ub8CbdM=
+github.com/minya/googleapis v0.0.0-20171111171945-a898d12af8b1/go.mod h1:T/qpVpVhXk/0954TKicPfBrfAA3bnCkxzQpcPt2mzlc=
+github.com/minya/goutils v0.0.0-20180115114943-130dc18ce623 h1:o3OTK+6u5VCRaY04CaGknrOlvabfMZGBUJCj4k1GBm8=
+github.com/minya/goutils v0.0.0-20180115114943-130dc18ce623/go.mod h1:pv9bqgVMpS0PRT9sVvFIF+tHhk8+RjSzalfFE3eQwwc=
+github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84 h1:+bT+yunEPKAItgit8xh1VZH+p4rvsJIBUQaN2CwRfzE=
+github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84/go.mod h1:05eS06aw8jArT5wHdZHcpkGtkYjHyF0F6tJhUynNKc8=
+golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
+golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
