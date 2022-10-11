@@ -8,5 +8,7 @@ github.com/minya/goutils v0.0.0-20180115114943-130dc18ce623 h1:o3OTK+6u5VCRaY04C
 github.com/minya/goutils v0.0.0-20180115114943-130dc18ce623/go.mod h1:pv9bqgVMpS0PRT9sVvFIF+tHhk8+RjSzalfFE3eQwwc=
 github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84 h1:+bT+yunEPKAItgit8xh1VZH+p4rvsJIBUQaN2CwRfzE=
 github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84/go.mod h1:05eS06aw8jArT5wHdZHcpkGtkYjHyF0F6tJhUynNKc8=
+github.com/minya/telegramInfoBot v0.0.0-20221030160136-9097f28b9cb2 h1:T0bhB1oIgYIEGD+kSGGfdkOxot9U6L2ZOIp+ik0rxuQ=
+github.com/minya/telegramInfoBot v0.0.0-20221030160136-9097f28b9cb2/go.mod h1:rasZXmOZS/PbKV5Ws/E45t0WChbL7txtsQZKRg6vbus=
 golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
