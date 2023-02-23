@@ -10,3 +10,5 @@ github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84 h1:+bT+yunEPKAItgit
 github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84/go.mod h1:05eS06aw8jArT5wHdZHcpkGtkYjHyF0F6tJhUynNKc8=
 golang.org/x/text v0.3.7 h1:olpwvP2KacW1ZWvsR7uQhoyTYvKAupfQrRGBFM352Gk=
 golang.org/x/text v0.3.7/go.mod h1:u+2+/6zg+i71rQMx5EYifcz6MCKuco9NR6JIITiCfzQ=
+golang.org/x/text v0.7.0 h1:4BRB4x83lYWy72KwLD/qYDuTu7q9PjSagHvijDw7cLo=
+golang.org/x/text v0.7.0/go.mod h1:mrYo+phRRbMaCq/xk9113O4dZlRixOauAjOtrjsXDZ8=

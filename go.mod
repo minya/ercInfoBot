@@ -10,4 +10,4 @@ require (
 	github.com/minya/telegram v0.0.0-20211027173518-f0fb53fc1f84
 )
 
-require golang.org/x/text v0.3.7 // indirect
+require golang.org/x/text v0.7.0 // indirect
