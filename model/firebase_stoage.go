@@ -1,9 +1,11 @@
 package model
 
 import (
+	"log"
+	"strconv"
+
 	"github.com/melvinmt/firebase"
 	"github.com/minya/googleapis"
-	"strconv"
 )
 
 type FirebaseStorage struct {
@@ -65,6 +67,7 @@ func (this FirebaseStorage) getReference(path string) (*firebase.Reference, erro
 }
 
 func (this FirebaseStorage) signIn() (string, error) {
+	log.Printf("Signing in to firebase: %s", this)
 	response, err := googleapis.SignInWithEmailAndPassword(
 		this.Login, this.Password, this.ApiKey)
 	if nil != err {
