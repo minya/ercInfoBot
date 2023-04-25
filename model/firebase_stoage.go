@@ -70,6 +70,8 @@ func (this FirebaseStorage) signIn() (string, error) {
 	log.Printf("Signing in to firebase: %s", this)
 	response, err := googleapis.SignInWithEmailAndPassword(
 		this.Login, this.Password, this.ApiKey)
+
+	log.Printf("Response: %v", response)
 	if nil != err {
 		return "", err
 	}
